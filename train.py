@@ -47,7 +47,8 @@ def main():
         net.load_state_dict(weights,strict=False)
 
     optimizer = optim.Adam(net.parameters(), lr=args.lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5) #learning rate decay
+    # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5) #learning rate decay
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=settings.EPOCH) # THIS IS SCHEDULER
 
     '''load pretrained model'''
     if args.weights != 0:
@@ -95,7 +96,8 @@ def main():
     best_dice = 0.0
 
     for epoch in range(settings.EPOCH):
-
+        # print lr right now
+        print("current lr", optimizer.param_groups[0]['lr'])
         if epoch and epoch < 5:
             if args.dataset != 'REFUGE':
                 tol, (eiou, edice) = function.validation_sam(args, nice_test_loader, epoch, net, writer)
@@ -110,6 +112,7 @@ def main():
         logger.info(f'Train loss: {loss} || @ epoch {epoch}.')
         time_end = time.time()
         print('time_for_training ', time_end - time_start)
+        scheduler.step(epoch)
 
         net.eval()
         if epoch and epoch % args.val_freq == 0 or epoch == settings.EPOCH-1:
