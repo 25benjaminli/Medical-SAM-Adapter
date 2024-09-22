@@ -273,4 +273,8 @@ python train.py -net mobile_sam -mod sam_adpt -exp_name brats_africa_mobilesam -
 
 MULTIMASK
 python train.py -net sam -mod sam_adpt -exp_name brats_africa_test -sam_ckpt ./checkpoint/sam/sam_vit_b_01ec64.pth -image_size 100 -b 1 -dataset brats_africa -thd true -chunk 96 -num_sample 4 -vis 1 -warm 0 -val_freq 1 -out_size 224 -multimask_output 3
+
+
+CURRENT
+python train.py -net sam -mod sam_lora -exp_name brats_africa_test -sam_ckpt ./checkpoint/sam/sam_vit_b_01ec64.pth -image_size 100 -b 1 -dataset brats_africa -thd true -vis 1 -warm 1 -val_freq 2 -out_size 224 -encoder vit_b -w 4 -lr 1e-3
 """
