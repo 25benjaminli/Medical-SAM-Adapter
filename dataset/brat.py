@@ -11,31 +11,20 @@ from torch.utils.data import Dataset
 from utils import generate_click_prompt, random_box, random_click
 
 
-class Brat(Dataset):
-    def __init__(self, args, data_path , transform = None, transform_msk = None, mode = 'Training',prompt = 'click', plane = False):
+class BratsAfrica(Dataset):
+    def __init__(self, args, files, mode = 'Training',prompt = 'click', plane = False, transforms=None, multimodal=False):
 
         self.args = args
-        self.data_path = os.path.join(data_path,'Data')
-        self.name_list = os.listdir(self.data_path)
+        self.files = files # array of file names
         self.mode = mode
         self.prompt = prompt
         self.img_size = args.image_size
+        self.transforms = transforms
+        self.multimodal = multimodal
 
-        self.transform = transform
-        self.transform_msk = transform_msk
 
     def __len__(self):
-        return len(self.name_list)
-
-    def load_all_levels(self,path):
-        import nibabel as nib
-        data_dir = os.path.join(self.data_path)
-        levels = ['t1','flair','t2','t1ce']
-        raw_image = [nib.load(os.path.join
-        (data_dir,path,path+'_'+level+'.nii.gz')).get_fdata() for level in levels]
-        raw_seg = nib.load(os.path.join(data_dir,path,path+'_seg.nii.gz')).get_fdata()
-
-        return raw_image[0], raw_seg
+        return len(self.files)
 
     def __getitem__(self, index):
         # if self.mode == 'Training':
@@ -45,41 +34,42 @@ class Brat(Dataset):
         #     inout = 1
         #     point_label = 1
         point_label = 1
-        label = 4   # the class to be segmented
+        # label = 4   # the class to be segmented
 
         """Get the images"""
-        name = self.name_list[index]
-        img,mask = self.load_all_levels(name)
 
-        mask[mask!=label] = 0
-        mask[mask==label] = 1
-        # if self.mode == 'Training':
-        #     label = 0 if self.label_list[index] == 'benign' else 1
-        # else:
-        #     label = int(self.label_list[index])
+        di = self.transforms(self.files[index])
+        modality_idx = 1
+        img = di['image'][modality_idx] if not self.multimodal else di['image'] # only use the middle modality (t1c)
+        mask = di['label']
 
-        
-        img = np.resize(img,(self.args.image_size, self.args.image_size,img.shape[-1]))
-        mask = np.resize(mask,(self.args.out_size,self.args.out_size,mask.shape[-1]))
+        # mask[mask==0] = 0
+        # mask[mask!=0] = 1
 
-        img = torch.tensor(img).unsqueeze(0)
-        mask = torch.tensor(mask).unsqueeze(0)
+        # print("mask before", mask.shape) # 3, 384, 384, 155
+        # print("image shape", img.shape) # 4, 384, 384, 155
+        # need to convert to one channel
+
+        img = img.unsqueeze(0) if not self.multimodal else img
+        # mask = torch.tensor(mask)
         mask = torch.clamp(mask,min=0,max=1).int()
 
         if self.prompt == 'click':
             point_label, pt = random_click(np.array(mask), point_label)
-        # if self.transform:
-        #     state = torch.get_rng_state()
-        #     img = self.transform(img)
-        #     torch.set_rng_state(state)
 
-        #     if self.transform_msk:
-        #         mask = self.transform_msk(mask)
-                
-        #     # if (inout == 0 and point_label == 1) or (inout == 1 and point_label == 0):
-        #     #     mask = 1 - mask
-        name = name.split('/')[-1].split(".jpg")[0]
+        name = self.files[index]["image"][modality_idx].split('/')[-1].split(".npy")[0]
+        name = name.replace("-t1c", "")
+        
+        # print("name", name)
+
+        # remove extension
+
+        # print("image shape", img.shape)
+
         image_meta_dict = {'filename_or_obj':name}
+
+        # print("final image and mask shape", img.shape, mask.shape)
+        
         return {
             'image':img,
             'label': mask,

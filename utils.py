@@ -1168,6 +1168,7 @@ def generate_click_prompt(img, msk, pt_label = 1):
     pt_list = []
     msk_list = []
     b, c, h, w, d = msk.size()
+    # print("mask size: ", msk.size())
     msk = msk[:,0,:,:,:]
     for i in range(d):
         pt_list_s = []

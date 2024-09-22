@@ -168,7 +168,9 @@ class TinyViTAdapterBlock(nn.Module):
             if self.args[0].thd:     
                 from einops import rearrange
                 hh, ww = x.shape[1], x.shape[2]
-                depth = self.args.chunk
+                print(self.args[0])
+                depth = self.args[0].chunk
+                print("depth", depth)
                 xd = rearrange(x, '(b d) h w c -> (b h w) d c ', d=depth)
                 # xd = rearrange(xd, '(b d) n c -> (b n) d c', d=self.in_chans)
                 xd = self.norm1(xd)

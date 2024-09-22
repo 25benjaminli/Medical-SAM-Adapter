@@ -89,15 +89,17 @@ def train_sam(args, net: nn.Module, optimizer, train_loader,
                 pt = pack['pt']
                 point_labels = pack['p_label']
             name = pack['image_meta_dict']['filename_or_obj']
-
+            
             if args.thd:
                 imgs, pt, masks = generate_click_prompt(imgs, masks)
+
+                # print("image current shape", imgs.shape)
 
                 pt = rearrange(pt, 'b n d -> (b d) n')
                 imgs = rearrange(imgs, 'b c h w d -> (b d) c h w ')
                 masks = rearrange(masks, 'b c h w d -> (b d) c h w ')
 
-                imgs = imgs.repeat(1,3,1,1)
+                imgs = imgs.repeat(1,3,1,1) if not args.multimodal else imgs
                 point_labels = torch.ones(imgs.size(0))
 
                 imgs = torchvision.transforms.Resize((args.image_size,args.image_size))(imgs)
@@ -106,6 +108,8 @@ def train_sam(args, net: nn.Module, optimizer, train_loader,
 
             mask_type = torch.float32
             ind += 1
+            # print("image sizew", imgs.size())
+            # print("mask size", masks.size())
             b_size,c,w,h = imgs.size()
             longsize = w if w >=h else h
 
@@ -273,7 +277,7 @@ def validation_sam(args, val_loader, epoch, net: nn.Module, clean_dir=True):
                     pt = rearrange(pt, 'b n d -> (b d) n')
                     imgs = rearrange(imgs, 'b c h w d -> (b d) c h w ')
                     masks = rearrange(masks, 'b c h w d -> (b d) c h w ')
-                    imgs = imgs.repeat(1,3,1,1)
+                    imgs = imgs.repeat(1,3,1,1) if not args.multimodal else imgs
                     point_labels = torch.ones(imgs.size(0))
 
                     imgs = torchvision.transforms.Resize((args.image_size,args.image_size))(imgs)

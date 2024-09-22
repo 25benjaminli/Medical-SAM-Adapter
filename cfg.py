@@ -50,6 +50,9 @@ def parse_args():
     type=str,
     default='../data',
     help='The path of segmentation data')
+
+    parser.add_argument('-multichannel', type=bool, default=False, help='multichannel or not')
+    parser.add_argument('-multimodal', type=bool, default=False, help='multimodal input or not')
     # '../dataset/RIGA/DiscRegion'
     # '../dataset/ISIC'
     opt = parser.parse_args()
